@@ -14,7 +14,7 @@ function Room() {
             container:element,
             sharedLinks:[
                 { name: "Copy Link",
-                    url:`https://localhost:5173/room/${roomId}`
+                    url:`https://go-social2.vercel.app/room/${roomId}`
                  },
             ],
             scenario:{
