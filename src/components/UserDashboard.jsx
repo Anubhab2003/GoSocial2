@@ -1,18 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import authService from "../appwrite/auth"; // Importing AuthService
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
 
 // Load environment variables from .env file
-const socket = io(process.env.PORT);
+const socket = io(import.meta.env.VITE_PORT);
 
 const UserDashboard = () => {
     const { roomId } = useParams();
+    const navigate = useNavigate();
     const [user, setUser] = useState(null);
-    const [message, setMessage] = useState("");
-    const [messages, setMessages] = useState([]);
-    const [activeUsers, setActiveUsers] = useState([]);
+    const [value, setValue] = useState("");
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -24,46 +23,34 @@ const UserDashboard = () => {
         };
         fetchUser();
 
-        socket.on("update-active-users", (users) => {
-            setActiveUsers(users);
-        });
-
-        socket.on("receive-message", (data) => {
-            setMessages((prev) => [...prev, data]);
-        });
-
         return () => {
-            socket.off("update-active-users");
-            socket.off("receive-message");
+            socket.off("user-joined");
         };
     }, []);
 
-    const sendMessage = () => {
-        if (message.trim() && user) {
-            socket.emit("send-message", { username: user.name, message });
-            setMessage("");
-        }
-    };
+    const handleJoinRoom = useCallback(() => {
+        navigate(`/room/${value}`);
+    }, [navigate, value]);
 
-    const myMeeting = async (element) => {
-        const appId = process.env.VITE_VC_APP_ID;
-        const serverSecret = process.env.VITE_VC_SERVER;
-        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appId, serverSecret, roomId, Date.now().toString(), "Anubhab Chowdhury");
+    // const myMeeting = async (element) => {
+    //     const appId = import.meta.env.VITE_VC_APP_ID;
+    //     const serverSecret = import.meta.env.VITE_VC_SERVER;
+    //     const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appId, serverSecret, roomId, Date.now().toString(), "Anubhab Chowdhury");
 
-        const zc = ZegoUIKitPrebuilt.create(kitToken);
-        zc.joinRoom({
-            container: element,
-            sharedLinks: [
-                {
-                    name: "Copy Link",
-                    url: `https://localhost:5173/room/${roomId}`
-                },
-            ],
-            scenario: {
-                mode: ZegoUIKitPrebuilt.OneONoneCall,
-            }
-        });
-    };
+    //     const zc = ZegoUIKitPrebuilt.create(kitToken);
+    //     zc.joinRoom({
+    //         container: element,
+    //         sharedLinks: [
+    //             {
+    //                 name: "Copy Link",
+    //                 url: `https://localhost:5173/room/${roomId}`
+    //             },
+    //         ],
+    //         scenario: {
+    //             mode: ZegoUIKitPrebuilt.OneONoneCall,
+    //         }
+    //     });
+    // };
 
     return (
         <div className="bg-gray-900 min-h-screen text-white flex flex-col items-center p-5">
@@ -72,53 +59,23 @@ const UserDashboard = () => {
             </h1>
 
             <div className="w-full max-w-lg mt-5">
-                <div className="bg-gray-800 p-4 rounded-lg">
-                    <h2 className="text-lg font-semibold">Active Users</h2>
-                    <div className="mt-2">
-                        {activeUsers.map((username, index) => (
-                            <p key={index} className="text-gray-300">{username}</p>
-                        ))}
-                    </div>
-                </div>
+                <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    placeholder="Enter Room Code"
+                    className="p-2 rounded-lg bg-gray-800 text-white"
+                />
+                <button
+                    onClick={handleJoinRoom}
+                    className="bg-blue-500 px-4 py-2 rounded-lg hover:bg-blue-600 mt-2"
+                >
+                    Join
+                </button>
 
-                <div className="bg-gray-800 p-4 mt-5 rounded-lg">
-                    <h2 className="text-lg font-semibold">Chat</h2>
-                    <div className="mt-2 h-48 overflow-y-auto bg-gray-700 p-3 rounded-lg">
-                        {messages.map((msg, index) => (
-                            <div
-                                key={index}
-                                className={`p-2 rounded-lg mb-2 ${
-                                    msg.username === user?.name
-                                        ? "bg-blue-500 self-end text-right"
-                                        : "bg-gray-600 self-start text-left"
-                                }`}
-                            >
-                                <strong>{msg.username}:</strong> {msg.message}
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="mt-4 flex">
-                        <input
-                            type="text"
-                            className="flex-1 p-2 rounded-l-lg bg-gray-600 text-white"
-                            placeholder="Type a message..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                        />
-                        <button
-                            className="bg-blue-500 px-4 py-2 rounded-r-lg hover:bg-blue-600"
-                            onClick={sendMessage}
-                        >
-                            Send
-                        </button>
-                    </div>
-                </div>
-
-                <div className="bg-gray-800 p-4 mt-5 rounded-lg">
+                {/* <div className="bg-gray-800 p-4 mt-5 rounded-lg">
                     <div ref={myMeeting} />
-                </div>
+                </div> */}
             </div>
         </div>
     );

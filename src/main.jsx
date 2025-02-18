@@ -18,6 +18,7 @@ import Post from "./pages/Post";
 import AllPosts from "./pages/AllPosts";
 import AdminPage from "./pages/AdminPage";
 import UserDash from "./pages/UserDash";
+import Room from "./components/Room"
 
 const router = createBrowserRouter([
   {
@@ -90,6 +91,10 @@ const router = createBrowserRouter([
                     <UserDash/>
                 </AuthLayout>
             ),
+        },
+        {
+            path:"/room/:roomId",
+            element: <Room />,
         }
     ],
 },
