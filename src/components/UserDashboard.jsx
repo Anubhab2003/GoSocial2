@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import authService from "../appwrite/auth"; // Importing AuthService
+import { useParams } from 'react-router-dom';
+import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
 
-const socket = io("http://localhost:5000");
+// Load environment variables from .env file
+const socket = io(process.env.PORT);
 
 const UserDashboard = () => {
+    const { roomId } = useParams();
     const [user, setUser] = useState(null);
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState([]);
@@ -41,12 +45,31 @@ const UserDashboard = () => {
         }
     };
 
+    const myMeeting = async (element) => {
+        const appId = process.env.VITE_VC_APP_ID;
+        const serverSecret = process.env.VITE_VC_SERVER;
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appId, serverSecret, roomId, Date.now().toString(), "Anubhab Chowdhury");
+
+        const zc = ZegoUIKitPrebuilt.create(kitToken);
+        zc.joinRoom({
+            container: element,
+            sharedLinks: [
+                {
+                    name: "Copy Link",
+                    url: `https://localhost:5173/room/${roomId}`
+                },
+            ],
+            scenario: {
+                mode: ZegoUIKitPrebuilt.OneONoneCall,
+            }
+        });
+    };
+
     return (
         <div className="bg-gray-900 min-h-screen text-white flex flex-col items-center p-5">
             <h1 className="text-2xl font-bold">
                 Welcome, {user ? user.name : "Guest"}
             </h1>
-            
 
             <div className="w-full max-w-lg mt-5">
                 <div className="bg-gray-800 p-4 rounded-lg">
@@ -91,6 +114,10 @@ const UserDashboard = () => {
                             Send
                         </button>
                     </div>
+                </div>
+
+                <div className="bg-gray-800 p-4 mt-5 rounded-lg">
+                    <div ref={myMeeting} />
                 </div>
             </div>
         </div>
