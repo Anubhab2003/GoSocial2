@@ -7,9 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Swal from 'sweetalert2';
 
-
 function PostForm({ post }) {
-    const { register, handleSubmit, watch, setValue, control, getValues } = useForm({
+    const { register, handleSubmit, watch, setValue, getValues } = useForm({
         defaultValues: {
             title: post?.title || '',
             slug: post?.slug || '',
@@ -41,7 +40,6 @@ function PostForm({ post }) {
 
             if (post) {
                 const dbPost = await appwriteService.updatePost(post.$id, requestData);
-
                 if (dbPost) {
                     navigate(`/post/${dbPost.$id}`);
                 }
@@ -49,9 +47,7 @@ function PostForm({ post }) {
                 if (!fileId) {
                     throw new Error('Missing required attribute "featuresImage"');
                 }
-
                 const dbPost = await appwriteService.createPost(requestData);
-
                 if (dbPost) {
                     navigate(`/post/${dbPost.$id}`);
                 }
@@ -82,14 +78,15 @@ function PostForm({ post }) {
             subscription.unsubscribe(); // MEMORY MANAGEMENT AND OPTIMIZATION
         };
     }, [watch, slugTransform, setValue]);
+
     const showAlert = () => {
         Swal.fire({
-          title: 'Success!',
-          text: 'Post submitted successfully',
-          icon: 'success',
-          confirmButtonText: 'Okay'
+            title: 'Success!',
+            text: 'Post submitted successfully',
+            icon: 'success',
+            confirmButtonText: 'Okay'
         });
-      };
+    };
 
     return (
         <form onSubmit={handleSubmit(submit)} className="flex flex-wrap">
@@ -109,9 +106,13 @@ function PostForm({ post }) {
                         setValue('slug', slugTransform(e.currentTarget.value), { shouldValidate: true });
                     }}
                 />
+                {/* ✅ Fixed Content Issue */}
                 <TinyMCEEditor
-                    value={getValues('content')}
-                    onChange={(content) => setValue('content', content)}
+                    value={watch('content') || ''}
+                    onChange={(content) => {
+                        console.log('Content updated:', content); // Debugging
+                        setValue('content', content, { shouldValidate: true });
+                    }}
                 />
             </div>
             <div className="w-1/3 px-2">
@@ -137,10 +138,12 @@ function PostForm({ post }) {
                     className="mb-4"
                     {...register('status', { required: true })}
                 />
-                <Button type="submit" className="w-full bg-blue-600" text={post ? 'Update' : 'Submit'}
-                onClick={showAlert} 
+                <Button
+                    type="submit"
+                    className="w-full bg-blue-600"
+                    text={post ? 'Update' : 'Submit'}
+                    onClick={showAlert}
                 />
-                
             </div>
         </form>
     );
